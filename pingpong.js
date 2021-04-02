@@ -1,5 +1,7 @@
-var canvas = document.getElementById("pingpong");
+let canvas = document.getElementById("pingpong");
 const ctx=canvas.getContext("2d");
+let upArrowPressed = false;
+let downArrowPressed = false;
 const user = {
     x:0,
     y:canvas.height/2-100/2,
@@ -30,7 +32,7 @@ function drawRect(x,y,w,h,color) {
     ctx.fillRect(x,y,w,h);
 }
 const net = {
-    x: canvas.width/2 -1,
+    x: canvas.width/2,
     y:0,
     width:2,
     height:10,
@@ -50,7 +52,7 @@ function drawCircle(x,y,r,color){
 }
 function drawText(text,x,y,color){
     ctx.fillStyle = color;
-    ctx.font = "45px fantasy";
+    ctx.font = "45px sans-serif";
     ctx.fillText(text,x,y);
 }
 function render(){
@@ -62,39 +64,61 @@ function render(){
     drawRect(comp.x,comp.y,comp.width,comp.height,comp.color);
     drawCircle(ball.x,ball.y,ball.radius,ball.color);
 }
-canvas.addEventListener("mousemove",movePaddle);
-function movePaddle(evt){
-    let rect = canvas.getBoundingClientRect();
-    user.y = evt.clientY - rect.top - user.height/2;
+document.addEventListener("keydown",keyDownHandler);
+document.addEventListener("keyup",keyUpHandler);
+function keyDownHandler(event){
+    switch (event.keyCode){
+        case 38: upArrowPressed = true;
+            console.log(upArrowPressed);
+            break;
+        case 40: downArrowPressed = true;
+            console.log(downArrowPressed);
+            break;
+    }
 }
-function collision(b,p){
-    b.top = b.y- b.radius;
-    b.bottom= b.y + b.radius;
-    b.left= b.x - b.radius;
-    b.right= b.x + b.radius;
+function keyUpHandler(event){
+    switch (event.keyCode){
+        case 38: upArrowPressed = false;
+            break;
+        case 40: downArrowPressed = false;
+            break;
+    }
+}
+//hành động va chạm của bóng với paddle và 2 thanh trên
+function collision(ball,player){
+    ball.top = ball.y- ball.radius;
+    ball.bottom= ball.y + ball.radius;
+    ball.left= ball.x - ball.radius;
+    ball.right= ball.x + ball.radius;
 
-    p.top = p.y;
-    p.bottom= p.y + p.height;
-    p.left= p.x;
-    p.right=p.x + p.width;
+    player.top = player.y;
+    player.bottom= player.y + player.height;
+    player.left= player.x;
+    player.right=player.x + player.width;
 
-    return b.right > p.left && b.bottom > p.top && b.left<p.right && b.top < p.bottom;
+    return ball.right > player.left && ball.bottom > player.top && ball.left<player.right && ball.top < player.bottom;
 }
 function resetBall(){
     ball.x = canvas.width/2;
     ball.y = canvas.height/2;
-    ball.speed = 5;
+    ball.speed = 4.5;
     ball.velocityX = - ball.velocityX;
+    ball.velocityY = - ball.velocityY;
 }
 function update(){
+    if (upArrowPressed && user.y>0){
+        user.y -=7;
+    }else if(downArrowPressed && user.y<canvas.height-user.height){
+        user.y +=7;
+    }
     ball.x+=ball.velocityX;
     ball.y+=ball.velocityY;
-    let computerLevel = 0.1;
+    let computerLevel= 0.03;
     comp.y += (ball.y-(comp.y+comp.height/2))*computerLevel;
     if (ball.y + ball.radius>canvas.height||ball.y-ball.radius<0){
         ball.velocityY=-ball.velocityY;
     }
-    let player= (ball.x <canvas.width/2) ? user : comp ;
+    let player= (ball.x <canvas.width/ 2) ? user : comp ;
     if (collision(ball,player)){
         let collidePoint = ball.y - (player.y + player.height/2);
         collidePoint=collidePoint/player.height/2;
@@ -104,22 +128,25 @@ function update(){
         ball.velocityY = ball.speed * Math.sin(angleRad);
         ball.speed +=0.5;
     }
-    if(ball.x - ball.radius < 0){
+    if(ball.x < 0){
         comp.score++;
         resetBall();
-    }else if(ball.x + ball.radius > canvas.width){
+    }else if(ball.x > canvas.width){
         user.score++;
         resetBall();
     }
 }
-function gameOver(){
-    if(user.score===3){
-        drawText("You win!",3*canvas.width/8,canvas.height/2,"white");
-    }
-    else if (comp.score===3){
-        drawText("You lose!",3*canvas.width/8,canvas.height/2,"white");
+function gameOver() {
+    if (user.score === 3) {
+        // drawText("You win!", 3 * canvas.width / 8, canvas.height / 2, "white");
+        alert("You win!");
+        document.location.reload();
+    } else if (comp.score === 3) {
+        // drawText("You lose!", 3 * canvas.width / 8, canvas.height / 2, "white");
+        alert("You lose!");
+        document.location.reload();
     } else {
-        setTimeout(game,1000/framePerSecond);
+        setTimeout(game, 1000 / 50);
     }
 }
 function game(){
@@ -127,5 +154,4 @@ function game(){
     render();
     gameOver();
 }
-const framePerSecond = 50;
-setTimeout(game,1000/framePerSecond);
+setTimeout(game,1000/50);
